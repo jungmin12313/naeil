@@ -1,0 +1,124 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Place {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  name      String
+  address   String
+  lat       Float
+  lng       Float
+  ramp      String // "평지", "경사로", "계단만"
+  door      String // "자동문", "여닫이", "미닫이"
+  space     String // "여유로움", "협소함"
+  grade     String // "GREEN", "YELLOW", "RED"
+  comment   String
+
+  // New Fields
+  threshold   Float?   @default(0) // cm
+  door_width  Float?   @default(100) // cm
+  image_url   String?
+  has_restroom Boolean @default(false)
+  has_parking  Boolean @default(false)
+
+  // Detailed Accessibility Fields
+  slope        Float?   @default(0) // General slope in degrees
+  ramp_slope   Float?   // Specific ramp slope
+  ramp_width   Float?   // Specific ramp width in cm
+  has_bell     Boolean  @default(false)
+  bell_status  String?  // "정상 작동", "수리 필요"
+
+  // Meta Data for Data Lab
+  district     String?
+  neighborhood String?
+  
+  authorId     String?
+  author       User?    @relation(fields: [authorId], references: [id])
+
+  // Multi-Image Relation
+  images       PlaceImage[]
+}
+
+model PlaceImage {
+  id        String   @id @default(uuid())
+  url       String   // Base64 string or URL
+  placeId   String
+  place     Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  places    Place[]
+  
+  // Gamification Fields
+  naeilIndex  Int      @default(0)
+  level       Int      @default(1)
+  trustScore  Float    @default(100.0)
+  
+  reports     Report[]
+  validations Validation[]
+}
+
+model Report {
+  id              String   @id @default(uuid())
+  placeId         String   // Kakao Maps place_id or custom ID
+  placeName       String
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  
+  // Location
+  latitude        Float
+  longitude       Float
+  district        String   // e.g., "Buk-gu"
+  neighborhood    String   // e.g., "Yongbong-dong"
+  address         String
+  
+  // Accessibility Data
+  status          String   @default("UNKNOWN") // ACCESSIBLE, INACCESSIBLE, CONDITIONAL, UNKNOWN
+  stepHeightCm    Float?   // Threshold height in cm
+  slopeType       String?  // FLAT, MODERATE, STEEP, UNSAFE
+  
+  // Photos (Required 2)
+  photoUrl1       String   // Entrance overview
+  photoUrl2       String   // Step detail
+  
+  // Metadata
+  userMemo        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Validation
+  isValidated     Boolean  @default(false)
+  validationCount Int      @default(0)
+  
+  validations     Validation[]
+}
+
+model Validation {
+  id             String   @id @default(uuid())
+  reportId       String
+  report         Report   @relation(fields: [reportId], references: [id])
+  validatorId    String
+  validator      User     @relation(fields: [validatorId], references: [id])
+  
+  isAccurate     Boolean  // true: Accurate, false: Changed/Inaccurate
+  comment        String?
+  createdAt      DateTime @default(now())
+  
+  @@unique([reportId, validatorId]) // Prevent duplicate validation by same user
+}
