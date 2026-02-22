@@ -22,7 +22,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
+        const body = await request.json() as any;
         const {
             name, address, lat, lng,
             ramp, door, space,
@@ -155,7 +155,7 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
         }
 
-        const body = await request.json();
+        const body = await request.json() as any;
         const {
             id, name, address, lat, lng,
             ramp, door, space,
