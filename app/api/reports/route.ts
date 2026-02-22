@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { uploadToS3 } from '@/lib/s3Upload';
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Missing data payload' }, { status: 400 });
         }
 
-        const data = JSON.parse(dataJson);
+        const data = JSON.parse(dataJson) as any;
 
         // 2. Upload Photos (Parallel)
         const [photoUrl1, photoUrl2] = await Promise.all([
