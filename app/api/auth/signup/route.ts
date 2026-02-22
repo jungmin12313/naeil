@@ -6,7 +6,9 @@ const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
     try {
-        const { name, email, password } = await req.json() as any;
+        // Explicitly cast to any to bypass TS error during build
+        const body = await req.json() as any;
+        const { name, email, password } = body;
 
         if (!email || !password || !name) {
             return NextResponse.json(
